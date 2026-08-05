@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 
 type Message = {
   id: string;
@@ -9,7 +10,7 @@ type Message = {
   timestamp: string;
 };
 
-type Theme = "dark" | "light";
+type Theme = "light" | "dark";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -37,12 +38,12 @@ const QUICK_SUGGESTIONS = [
 ];
 
 export default function ChatPage() {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>("light");
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome-bot",
       role: "bot",
-      text: "👋 Hi! I am **Prajwal's AI Assistant**.\n\nAsk me anything about his technical projects, skills, internship, or contact info. You can also pick a question below!",
+      text: "👋 Hi! I am **Prajwal's AI Assistant**.\n\nAsk me anything about his technical projects, skills, internship at X7 IT Technologies, or contact info. You can also pick a suggestion below!",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     },
   ]);
@@ -55,20 +56,23 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Load theme preference on mount
+  // Load theme preference on mount (defaulting to light)
   useEffect(() => {
     const savedTheme = localStorage.getItem("portfolio_theme") as Theme | null;
-    if (savedTheme === "light" || savedTheme === "dark") {
+    if (savedTheme === "dark" || savedTheme === "light") {
       setTheme(savedTheme);
-    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
+      document.documentElement.className = `theme-${savedTheme}`;
+    } else {
       setTheme("light");
+      document.documentElement.className = "theme-light";
     }
   }, []);
 
   function toggleTheme() {
-    const nextTheme: Theme = theme === "dark" ? "light" : "dark";
+    const nextTheme: Theme = theme === "light" ? "dark" : "light";
     setTheme(nextTheme);
     localStorage.setItem("portfolio_theme", nextTheme);
+    document.documentElement.className = `theme-${nextTheme}`;
   }
 
   // Smooth auto-scroll
@@ -146,7 +150,7 @@ export default function ChatPage() {
           {
             id: botMsgId,
             role: "bot",
-            text: "⚠️ **Connection Error**: Unable to reach the backend server (`http://localhost:8000`). Please ensure FastAPI is running.",
+            text: "⚠️ **Connection Error**: Unable to reach backend server (`http://localhost:8000`). Please verify FastAPI is running.",
             timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           },
         ]);
@@ -283,41 +287,53 @@ export default function ChatPage() {
   }
 
   return (
-    <div className={`app-viewport theme-${theme}`}>
+    <div className={`chat-viewport ${theme === "dark" ? "theme-dark" : "theme-light"}`}>
       <div className="chat-container">
         {/* Header */}
         <header className="chat-header">
-          <div className="header-brand">
-            <div className="bot-avatar">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="11" width="18" height="10" rx="2" />
-                <circle cx="12" cy="5" r="2" />
-                <path d="M12 7v4" />
-                <line x1="8" y1="16" x2="8.01" y2="16" strokeWidth="2.5" />
-                <line x1="16" y1="16" x2="16.01" y2="16" strokeWidth="2.5" />
+          <div className="header-left">
+            <Link href="/" className="back-link" title="Back to Portfolio Landing Page">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
               </svg>
-              <span className="status-dot" />
-            </div>
+              <span className="back-text">Portfolio</span>
+            </Link>
 
-            <div className="header-info">
-              <div className="title-row">
-                <h1 className="assistant-title">Prajwal&apos;s Assistant</h1>
-                <span className="gradient-badge">AI</span>
+            <div className="header-brand">
+              <div className="bot-avatar">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="11" width="18" height="10" rx="2" />
+                  <circle cx="12" cy="5" r="2" />
+                  <path d="M12 7v4" />
+                  <line x1="8" y1="16" x2="8.01" y2="16" strokeWidth="2.5" />
+                  <line x1="16" y1="16" x2="16.01" y2="16" strokeWidth="2.5" />
+                </svg>
+                <span className="status-dot" />
               </div>
-              <p className="assistant-subtitle">Online • Ask anything about Prajwal</p>
+
+              <div className="header-info">
+                <div className="title-row">
+                  <h1 className="assistant-title">Prajwal&apos;s Assistant</h1>
+                  <span className="gradient-badge">AI</span>
+                </div>
+                <p className="assistant-subtitle">Online • Grounded on Verified Profile</p>
+              </div>
             </div>
           </div>
 
           <div className="header-controls">
-            {/* Theme Toggle Button */}
+            {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
               className="icon-btn theme-toggle-btn"
-              title={`Switch to ${theme === "dark" ? "Light" : "Dark"} mode`}
+              title={`Switch to ${theme === "light" ? "Dark" : "Light"} mode`}
               aria-label="Toggle theme"
             >
-              {theme === "dark" ? (
-                // Sun Icon for Dark Mode
+              {theme === "light" ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                </svg>
+              ) : (
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="5" />
                   <line x1="12" y1="1" x2="12" y2="3" />
@@ -328,11 +344,6 @@ export default function ChatPage() {
                   <line x1="21" y1="12" x2="23" y2="12" />
                   <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
                   <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                </svg>
-              ) : (
-                // Moon Icon for Light Mode
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                 </svg>
               )}
             </button>
@@ -480,119 +491,27 @@ export default function ChatPage() {
         </footer>
       </div>
 
-      {/* Unified Gradient & Theme Stylesheet */}
-      <style jsx global>{`
-        /* ======================== DARK THEME ======================== */
-        .theme-dark {
-          --bg-viewport: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(99, 102, 241, 0.14), transparent 70%), #0a0b12;
-          --surface-panel: #111320;
-          --surface-header: #131524;
-          --surface-suggestions: #0f101b;
-          --surface-card: #151829;
-          --surface-input: #0c0d16;
-          --border-color: rgba(99, 102, 241, 0.16);
-          --border-hover: rgba(168, 85, 247, 0.4);
-          --text-primary: #f8fafc;
-          --text-secondary: #94a3b8;
-          --text-accent: #c084fc;
-          --user-avatar-bg: #1e2238;
-          --code-bg: #0a0b12;
-          --code-header-bg: #121421;
-          --scrollbar-thumb: rgba(139, 92, 246, 0.3);
-          --scrollbar-thumb-hover: rgba(168, 85, 247, 0.6);
-          --box-shadow-main: 0 20px 50px rgba(0, 0, 0, 0.55), 0 0 30px rgba(99, 102, 241, 0.06);
-        }
-
-        /* ======================== LIGHT THEME ======================== */
-        .theme-light {
-          --bg-viewport: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(99, 102, 241, 0.08), transparent 70%), #f8fafc;
-          --surface-panel: #ffffff;
-          --surface-header: #ffffff;
-          --surface-suggestions: #f8fafc;
-          --surface-card: #f1f5f9;
-          --surface-input: #f8fafc;
-          --border-color: rgba(99, 102, 241, 0.14);
-          --border-hover: rgba(139, 92, 246, 0.45);
-          --text-primary: #0f172a;
-          --text-secondary: #64748b;
-          --text-accent: #7c3aed;
-          --user-avatar-bg: #e2e8f0;
-          --code-bg: #0f172a;
-          --code-header-bg: #1e293b;
-          --scrollbar-thumb: rgba(99, 102, 241, 0.22);
-          --scrollbar-thumb-hover: rgba(99, 102, 241, 0.45);
-          --box-shadow-main: 0 16px 45px rgba(99, 102, 241, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04);
-        }
-
-        /* SHARED TOKENS */
-        :root {
-          --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
-          --primary-gradient-hover: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #9333ea 100%);
-          --accent-glow: rgba(139, 92, 246, 0.28);
-        }
-
-        * {
-          box-sizing: border-box;
-          margin: 0;
-          padding: 0;
-          -webkit-tap-highlight-color: transparent;
-        }
-
-        /* GLOBAL SCROLLBAR HARMONY */
-        * {
-          scrollbar-width: thin;
-          scrollbar-color: var(--scrollbar-thumb) transparent;
-        }
-
-        *::-webkit-scrollbar {
-          width: 6px;
-          height: 6px;
-        }
-
-        *::-webkit-scrollbar-track {
-          background: transparent;
-        }
-
-        *::-webkit-scrollbar-thumb {
-          background: var(--scrollbar-thumb);
-          border-radius: 10px;
-          transition: background 0.2s ease;
-        }
-
-        *::-webkit-scrollbar-thumb:hover {
-          background: var(--scrollbar-thumb-hover);
-        }
-
-        html,
-        body {
-          height: 100%;
-          width: 100%;
-          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          -webkit-font-smoothing: antialiased;
-          overflow: hidden;
-        }
-
-        /* Viewport Container */
-        .app-viewport {
+      {/* Styles */}
+      <style jsx>{`
+        .chat-viewport {
           display: flex;
           align-items: center;
           justify-content: center;
           height: 100vh;
           height: 100dvh;
           width: 100%;
-          background: var(--bg-viewport);
+          background: var(--bg-gradient);
           color: var(--text-primary);
           padding: 1.25rem;
           overflow: hidden;
           transition: background 0.25s ease, color 0.25s ease;
         }
 
-        /* Main Chat Container */
         .chat-container {
           display: flex;
           flex-direction: column;
           width: 100%;
-          max-width: 860px;
+          max-width: 880px;
           height: 100%;
           max-height: min(92dvh, 880px);
           background-color: var(--surface-panel);
@@ -603,7 +522,7 @@ export default function ChatPage() {
           transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
         }
 
-        /* Header */
+        /* HEADER */
         .chat-header {
           display: flex;
           align-items: center;
@@ -613,6 +532,33 @@ export default function ChatPage() {
           border-bottom: 1px solid var(--border-color);
           flex-shrink: 0;
           transition: background-color 0.25s ease, border-color 0.25s ease;
+        }
+
+        .header-left {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          min-width: 0;
+        }
+
+        .back-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+          padding: 0.4rem 0.65rem;
+          border-radius: 8px;
+          background-color: var(--surface-card);
+          border: 1px solid var(--border-color);
+          color: var(--text-secondary);
+          font-size: 0.8rem;
+          font-weight: 600;
+          transition: all 0.15s ease;
+          flex-shrink: 0;
+        }
+
+        .back-link:hover {
+          border-color: var(--border-hover);
+          color: var(--text-accent);
         }
 
         .header-brand {
@@ -669,17 +615,6 @@ export default function ChatPage() {
           text-overflow: ellipsis;
         }
 
-        .gradient-badge {
-          font-size: 0.65rem;
-          font-weight: 700;
-          padding: 0.1rem 0.4rem;
-          border-radius: 5px;
-          background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%);
-          color: var(--text-accent);
-          border: 1px solid var(--border-hover);
-          letter-spacing: 0.03em;
-        }
-
         .assistant-subtitle {
           font-size: 0.74rem;
           color: var(--text-secondary);
@@ -722,9 +657,9 @@ export default function ChatPage() {
           justify-content: center;
         }
 
-        /* Suggestions Bar */
+        /* SUGGESTIONS */
         .suggestions-bar {
-          background-color: var(--surface-suggestions);
+          background-color: var(--surface-card-alt);
           border-bottom: 1px solid var(--border-color);
           padding: 0.6rem 1.25rem;
           flex-shrink: 0;
@@ -761,9 +696,9 @@ export default function ChatPage() {
         }
 
         .suggestion-chip:hover:not(:disabled) {
-          background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%);
           border-color: var(--border-hover);
           color: var(--text-accent);
+          background: var(--surface-card);
         }
 
         .chip-icon {
@@ -774,7 +709,7 @@ export default function ChatPage() {
           font-size: 0.78rem;
         }
 
-        /* Chat Stream */
+        /* CHAT STREAM */
         .chat-stream {
           flex: 1;
           display: flex;
@@ -845,7 +780,6 @@ export default function ChatPage() {
           align-items: flex-end;
         }
 
-        /* Speech Bubbles */
         .speech-bubble {
           padding: 0.85rem 1.1rem;
           border-radius: 16px;
@@ -870,13 +804,12 @@ export default function ChatPage() {
         }
 
         .bot-bubble {
-          background-color: var(--surface-card);
+          background-color: var(--surface-card-alt);
           border: 1px solid var(--border-color);
           color: var(--text-primary);
           border-bottom-left-radius: 4px;
         }
 
-        /* Bot Typography */
         .bot-content-wrap {
           display: flex;
           flex-direction: column;
@@ -921,7 +854,7 @@ export default function ChatPage() {
         }
 
         .bullet-dot {
-          color: #8b5cf6;
+          color: var(--text-accent);
           font-size: 1.1rem;
           line-height: 1.1;
           flex-shrink: 0;
@@ -932,7 +865,6 @@ export default function ChatPage() {
           min-width: 0;
         }
 
-        /* Code Block */
         .code-block {
           margin: 0.55rem 0;
           background-color: var(--code-bg);
@@ -1015,7 +947,7 @@ export default function ChatPage() {
           color: var(--text-accent);
         }
 
-        /* Typing Dots */
+        /* TYPING LOADER */
         .typing-box {
           display: flex;
           align-items: center;
@@ -1039,7 +971,7 @@ export default function ChatPage() {
           40% { transform: scale(1.1); opacity: 1; }
         }
 
-        /* Footer Input Area */
+        /* FOOTER */
         .chat-footer {
           padding: 0.85rem 1.25rem 0.95rem 1.25rem;
           background-color: var(--surface-header);
@@ -1121,10 +1053,6 @@ export default function ChatPage() {
           font-weight: 600;
         }
 
-        .stop-button:hover {
-          background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-        }
-
         .stop-icon {
           width: 8px;
           height: 8px;
@@ -1139,9 +1067,9 @@ export default function ChatPage() {
           margin-top: 0.4rem;
         }
 
-        /* TABLET STYLES (481px - 768px) */
+        /* RESPONSIVENESS */
         @media (max-width: 768px) {
-          .app-viewport {
+          .chat-viewport {
             padding: 0;
             height: 100vh;
             height: 100dvh;
@@ -1158,89 +1086,14 @@ export default function ChatPage() {
 
           .chat-header {
             padding: 0.75rem 1rem;
-            padding-top: max(0.75rem, env(safe-area-inset-top));
           }
 
-          .suggestions-bar {
-            padding: 0.5rem 1rem;
-          }
-
-          .chat-stream {
-            padding: 0.75rem 0.85rem;
+          .back-text {
+            display: none;
           }
 
           .bubble-box {
             max-width: 86%;
-          }
-
-          .chat-footer {
-            padding: 0.65rem 0.85rem;
-            padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
-          }
-        }
-
-        /* MOBILE PHONES (320px - 480px) */
-        @media (max-width: 480px) {
-          .assistant-title {
-            font-size: 0.88rem;
-          }
-
-          .assistant-subtitle {
-            font-size: 0.7rem;
-          }
-
-          .bot-avatar {
-            width: 32px;
-            height: 32px;
-          }
-
-          .row-avatar {
-            width: 24px;
-            height: 24px;
-            border-radius: 6px;
-            margin-bottom: 0.95rem;
-          }
-
-          .bubble-box {
-            max-width: 88%;
-          }
-
-          .speech-bubble {
-            padding: 0.7rem 0.85rem;
-            font-size: 0.88rem;
-          }
-
-          .user-text-content,
-          .chat-paragraph {
-            font-size: 0.88rem;
-          }
-
-          .suggestion-chip {
-            padding: 0.35rem 0.65rem;
-            font-size: 0.74rem;
-          }
-
-          .clear-label {
-            display: none;
-          }
-
-          .footer-notice {
-            display: none;
-          }
-        }
-
-        /* EXTRA SMALL PHONES (< 360px) */
-        @media (max-width: 360px) {
-          .bubble-box {
-            max-width: 92%;
-          }
-
-          .row-avatar {
-            display: none;
-          }
-
-          .speech-bubble {
-            padding: 0.65rem 0.75rem;
           }
         }
       `}</style>
