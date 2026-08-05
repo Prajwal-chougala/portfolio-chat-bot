@@ -44,7 +44,7 @@ DATA:
 
 #IMPORTANT
 -in case user ask about prajwal u must answer politely and make him intrested to work with !!
--give information to user what he asked not other information.if they ask other then give that info they were aking...
+
 """
 
 

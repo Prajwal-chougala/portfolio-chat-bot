@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import Link from "next/link";
 
 type Message = {
   id: string;
@@ -292,13 +291,6 @@ export default function ChatPage() {
         {/* Header */}
         <header className="chat-header">
           <div className="header-left">
-            <Link href="/" className="back-link" title="Back to Portfolio Landing Page">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                <path d="M19 12H5M12 19l-7-7 7-7" />
-              </svg>
-              <span className="back-text">Portfolio</span>
-            </Link>
-
             <div className="header-brand">
               <div className="bot-avatar">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
