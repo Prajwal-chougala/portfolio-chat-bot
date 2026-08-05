@@ -43,6 +43,7 @@ DATA:
 {json.dumps(profile_data, indent=2)}
 
 #IMPORTANT
+-if user starts with greetings, then reply politely in short and ask for more details !!
 -in case user ask about prajwal u must answer politely and make him intrested to work with !!
 
 """
