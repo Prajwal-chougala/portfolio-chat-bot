@@ -42,7 +42,7 @@ export default function ChatPage() {
     {
       id: "welcome-bot",
       role: "bot",
-      text: "👋 Hi! I am **Prajwal's AI Assistant**.\n\nAsk me anything about his technical projects, skills, internship at X7 IT Technologies, or contact info. You can also pick a suggestion below!",
+      text: "👋 Hi! I am **Prajwal's AI Assistant**.\n\nAsk me anything about his technical projects, skills, internship , or contact info. You can also pick a suggestion below!",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     },
   ]);
