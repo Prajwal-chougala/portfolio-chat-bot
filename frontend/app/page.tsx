@@ -9,9 +9,33 @@ export default function LoadingPage() {
   const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
-    // Set default theme on html element
-    const savedTheme = localStorage.getItem("portfolio_theme") || "light";
-    document.documentElement.className = `theme-${savedTheme}`;
+    // Apply theme helper
+    function applyTheme(t: string) {
+      document.documentElement.className = `theme-${t}`;
+      localStorage.setItem("portfolio_theme", t);
+    }
+
+    // 1. Read initial theme from URL param (for iframe embedding)
+    const params = new URLSearchParams(window.location.search);
+    const urlTheme = params.get("theme");
+    if (urlTheme === "dark" || urlTheme === "light") {
+      applyTheme(urlTheme);
+    } else {
+      // 2. Fall back to localStorage
+      const savedTheme = localStorage.getItem("portfolio_theme") || "light";
+      applyTheme(savedTheme);
+    }
+
+    // 3. Listen for live theme changes from parent portfolio (postMessage)
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === "THEME_CHANGE") {
+        const incomingTheme = event.data.theme;
+        if (incomingTheme === "dark" || incomingTheme === "light") {
+          applyTheme(incomingTheme);
+        }
+      }
+    };
+    window.addEventListener("message", handleMessage);
 
     // Animate progress bar
     const interval = setInterval(() => {
@@ -33,6 +57,7 @@ export default function LoadingPage() {
     }, 2200);
 
     return () => {
+      window.removeEventListener("message", handleMessage);
       clearInterval(interval);
       clearTimeout(timer);
     };

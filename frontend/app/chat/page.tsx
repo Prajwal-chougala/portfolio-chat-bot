@@ -55,23 +55,47 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Load theme preference on mount (defaulting to light)
+  // Centralized theme-switching function
+  function applyTheme(newTheme: Theme) {
+    setTheme(newTheme);
+    localStorage.setItem("portfolio_theme", newTheme);
+    document.documentElement.className = `theme-${newTheme}`;
+  }
+
+  // Load theme preference on mount (URL param > localStorage > default light)
+  // Also listen for live theme changes from parent portfolio via postMessage
   useEffect(() => {
-    const savedTheme = localStorage.getItem("portfolio_theme") as Theme | null;
-    if (savedTheme === "dark" || savedTheme === "light") {
-      setTheme(savedTheme);
-      document.documentElement.className = `theme-${savedTheme}`;
+    // 1. Read initial theme from URL param (for iframe embedding)
+    const params = new URLSearchParams(window.location.search);
+    const urlTheme = params.get("theme");
+    if (urlTheme === "dark" || urlTheme === "light") {
+      applyTheme(urlTheme);
     } else {
-      setTheme("light");
-      document.documentElement.className = "theme-light";
+      // 2. Fall back to localStorage
+      const savedTheme = localStorage.getItem("portfolio_theme") as Theme | null;
+      if (savedTheme === "dark" || savedTheme === "light") {
+        applyTheme(savedTheme);
+      } else {
+        applyTheme("light");
+      }
     }
+
+    // 3. Listen for live theme changes from parent portfolio (postMessage)
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === "THEME_CHANGE") {
+        const incomingTheme = event.data.theme;
+        if (incomingTheme === "dark" || incomingTheme === "light") {
+          applyTheme(incomingTheme);
+        }
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
   }, []);
 
   function toggleTheme() {
     const nextTheme: Theme = theme === "light" ? "dark" : "light";
-    setTheme(nextTheme);
-    localStorage.setItem("portfolio_theme", nextTheme);
-    document.documentElement.className = `theme-${nextTheme}`;
+    applyTheme(nextTheme);
   }
 
   // Smooth auto-scroll
