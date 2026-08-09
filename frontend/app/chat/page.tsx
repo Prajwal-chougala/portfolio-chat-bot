@@ -43,7 +43,7 @@ export default function ChatPage() {
       id: "welcome-bot",
       role: "bot",
       text: "👋 Hi! I am **Prajwal's AI Assistant**.\n\nAsk me anything about his technical projects, skills, internship , or contact info. You can also pick a suggestion below!",
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      timestamp: "",
     },
   ]);
 
@@ -54,6 +54,17 @@ export default function ChatPage() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Set the welcome message timestamp on the client to avoid hydration mismatch
+  useEffect(() => {
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === "welcome-bot" && !m.timestamp
+          ? { ...m, timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }
+          : m
+      )
+    );
+  }, []);
 
   // Centralized theme-switching function
   function applyTheme(newTheme: Theme) {
