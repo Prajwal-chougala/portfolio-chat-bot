@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import Draggable from "react-draggable";
 
 type Message = {
   id: string;
@@ -51,19 +52,9 @@ export default function ChatPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Drag and Maximize state
+  // Maximize state
   const [isMaximized, setIsMaximized] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
   
-  const dragInfo = useRef({
-    isDragging: false,
-    startX: 0,
-    startY: 0,
-    startPosX: 0,
-    startPosY: 0
-  });
-
   const abortControllerRef = useRef<AbortController | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -78,49 +69,6 @@ export default function ChatPage() {
       )
     );
   }, []);
-
-  // Drag event listeners
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!dragInfo.current.isDragging || isMaximized) return;
-      e.preventDefault();
-      
-      const dx = e.clientX - dragInfo.current.startX;
-      const dy = e.clientY - dragInfo.current.startY;
-      
-      setPosition({
-        x: dragInfo.current.startPosX + dx,
-        y: dragInfo.current.startPosY + dy,
-      });
-    };
-
-    const handleMouseUp = () => {
-      dragInfo.current.isDragging = false;
-      setIsDragging(false);
-    };
-
-    window.addEventListener("mousemove", handleMouseMove, { passive: false });
-    window.addEventListener("mouseup", handleMouseUp);
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [isMaximized]);
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (isMaximized) return;
-    if ((e.target as HTMLElement).closest(".header-controls")) return;
-    
-    setIsDragging(true);
-    dragInfo.current = {
-      isDragging: true,
-      startX: e.clientX,
-      startY: e.clientY,
-      startPosX: position.x,
-      startPosY: position.y
-    };
-  };
 
   // Centralized theme-switching function
   function applyTheme(newTheme: Theme) {
@@ -378,17 +326,18 @@ export default function ChatPage() {
 
   return (
     <div className={`chat-viewport ${theme === "dark" ? "theme-dark" : "theme-light"}`}>
-      <div 
-        className={`chat-container ${isMaximized ? "maximized" : ""} ${isDragging ? "dragging" : ""}`}
-        style={!isMaximized ? { transform: `translate(${position.x}px, ${position.y}px)` } : {}}
+      <Draggable
+        handle=".chat-header"
+        disabled={isMaximized}
+        bounds="parent"
       >
-        {/* Header */}
-        <header 
-          className="chat-header" 
-          onMouseDown={handleMouseDown}
-          style={{ cursor: isMaximized ? "default" : isDragging ? "grabbing" : "grab" }}
-        >
-          <div className="header-left">
+        <div className={`chat-container ${isMaximized ? "maximized" : ""}`}>
+          {/* Header */}
+          <header 
+            className="chat-header" 
+            style={{ cursor: isMaximized ? "default" : "grab" }}
+          >
+            <div className="header-left">
             <div className="header-brand">
               <div className="bot-avatar">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -598,6 +547,7 @@ export default function ChatPage() {
           <p className="footer-notice">Grounded strictly on Prajwal&apos;s verified profile</p>
         </footer>
       </div>
+      </Draggable>
 
       {/* Styles */}
       <style jsx>{`
@@ -627,29 +577,28 @@ export default function ChatPage() {
           border-radius: 18px;
           box-shadow: var(--box-shadow-main);
           overflow: hidden;
-          transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0s, max-width 0.3s ease, max-height 0.3s ease, border-radius 0.3s ease;
+          transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, max-width 0.3s ease, max-height 0.3s ease, border-radius 0.3s ease;
           position: relative;
         }
 
         .chat-container.maximized {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          width: 100vw;
-          height: 100vh;
-          max-width: none;
-          max-height: none;
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          bottom: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          max-width: none !important;
+          max-height: none !important;
           border-radius: 0;
           border: none;
           z-index: 9999;
           transform: none !important;
         }
 
-        .chat-container.dragging {
+        .chat-container:active:not(.maximized) {
           box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
-          transition: background-color 0.25s ease, border-color 0.25s ease, max-width 0.3s ease, max-height 0.3s ease, border-radius 0.3s ease;
         }
 
         /* HEADER */
