@@ -15,7 +15,7 @@ if not my_api_key:
     raise ValueError("GROQ_API_KEY not found in environment variables")
 client = Groq(api_key=my_api_key)
 
-model = "openai/gpt-oss-120b"
+model = "llama-3.1-8b-versatile"
 
 app = FastAPI()
 
