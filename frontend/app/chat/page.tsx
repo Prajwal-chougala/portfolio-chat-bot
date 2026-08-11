@@ -55,7 +55,14 @@ export default function ChatPage() {
   const [isMaximized, setIsMaximized] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
-  const dragStartRef = useRef({ x: 0, y: 0 });
+  
+  const dragInfo = useRef({
+    isDragging: false,
+    startX: 0,
+    startY: 0,
+    startPosX: 0,
+    startPosY: 0
+  });
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -75,39 +82,43 @@ export default function ChatPage() {
   // Drag event listeners
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging || isMaximized) return;
+      if (!dragInfo.current.isDragging || isMaximized) return;
+      e.preventDefault();
+      
+      const dx = e.clientX - dragInfo.current.startX;
+      const dy = e.clientY - dragInfo.current.startY;
+      
       setPosition({
-        x: e.clientX - dragStartRef.current.x,
-        y: e.clientY - dragStartRef.current.y,
+        x: dragInfo.current.startPosX + dx,
+        y: dragInfo.current.startPosY + dy,
       });
     };
 
     const handleMouseUp = () => {
+      dragInfo.current.isDragging = false;
       setIsDragging(false);
     };
 
-    if (isDragging) {
-      window.addEventListener("mousemove", handleMouseMove);
-      window.addEventListener("mouseup", handleMouseUp);
-    } else {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    }
+    window.addEventListener("mousemove", handleMouseMove, { passive: false });
+    window.addEventListener("mouseup", handleMouseUp);
 
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging, isMaximized]);
+  }, [isMaximized]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (isMaximized) return;
     if ((e.target as HTMLElement).closest(".header-controls")) return;
     
     setIsDragging(true);
-    dragStartRef.current = {
-      x: e.clientX - position.x,
-      y: e.clientY - position.y,
+    dragInfo.current = {
+      isDragging: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      startPosX: position.x,
+      startPosY: position.y
     };
   };
 
@@ -621,10 +632,19 @@ export default function ChatPage() {
         }
 
         .chat-container.maximized {
-          max-width: 100vw;
-          max-height: 100vh;
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          width: 100vw;
+          height: 100vh;
+          max-width: none;
+          max-height: none;
           border-radius: 0;
           border: none;
+          z-index: 9999;
+          transform: none !important;
         }
 
         .chat-container.dragging {
