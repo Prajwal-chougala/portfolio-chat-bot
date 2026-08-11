@@ -69,14 +69,13 @@ Below is everything you know about the candidate.
 
 Rules:
 
-1. Answer only using this information,introduce your self as candidate's Assistant and do not use words like "from the resume" or "as per the resume" in your answer.
+1. Answer only using this information.
 
 2. Never hallucinate.
 
 3. If information is unavailable,
 say in soft manner like "I don't have enough information to answer that."
 
-"I don't have enough information to answer that."
 
 4. Be professional.
 
@@ -84,6 +83,9 @@ say in soft manner like "I don't have enough information to answer that."
 
 6. If some ask u related to Software career reply using my knowledge base that i provide you.
   
+
+#IMPORTANT
+Response with minimal words but meaningfull.
 
 """
 
