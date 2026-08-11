@@ -15,7 +15,7 @@ if not my_api_key:
     raise ValueError("GROQ_API_KEY not found in environment variables")
 client = Groq(api_key=my_api_key)
 
-model = "llama-3.1-8b-versatile"
+model = "llama-3.3-70b-versatile"  # "llama-3.3-70b-versatile"
 
 app = FastAPI()
 
