@@ -51,6 +51,12 @@ export default function ChatPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  // Drag and Maximize state
+  const [isMaximized, setIsMaximized] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+
   const abortControllerRef = useRef<AbortController | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -65,6 +71,45 @@ export default function ChatPage() {
       )
     );
   }, []);
+
+  // Drag event listeners
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging || isMaximized) return;
+      setPosition({
+        x: e.clientX - dragStartRef.current.x,
+        y: e.clientY - dragStartRef.current.y,
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+    } else {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging, isMaximized]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (isMaximized) return;
+    if ((e.target as HTMLElement).closest(".header-controls")) return;
+    
+    setIsDragging(true);
+    dragStartRef.current = {
+      x: e.clientX - position.x,
+      y: e.clientY - position.y,
+    };
+  };
 
   // Centralized theme-switching function
   function applyTheme(newTheme: Theme) {
@@ -322,9 +367,16 @@ export default function ChatPage() {
 
   return (
     <div className={`chat-viewport ${theme === "dark" ? "theme-dark" : "theme-light"}`}>
-      <div className="chat-container">
+      <div 
+        className={`chat-container ${isMaximized ? "maximized" : ""} ${isDragging ? "dragging" : ""}`}
+        style={!isMaximized ? { transform: `translate(${position.x}px, ${position.y}px)` } : {}}
+      >
         {/* Header */}
-        <header className="chat-header">
+        <header 
+          className="chat-header" 
+          onMouseDown={handleMouseDown}
+          style={{ cursor: isMaximized ? "default" : isDragging ? "grabbing" : "grab" }}
+        >
           <div className="header-left">
             <div className="header-brand">
               <div className="bot-avatar">
@@ -371,6 +423,24 @@ export default function ChatPage() {
                   <line x1="21" y1="12" x2="23" y2="12" />
                   <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
                   <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                </svg>
+              )}
+            </button>
+
+            {/* Maximize Toggle Button */}
+            <button 
+              onClick={() => setIsMaximized(!isMaximized)} 
+              className="icon-btn maximize-btn" 
+              title={isMaximized ? "Restore" : "Maximize"} 
+              aria-label="Toggle maximize"
+            >
+              {isMaximized ? (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+                </svg>
+              ) : (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
                 </svg>
               )}
             </button>
@@ -546,7 +616,20 @@ export default function ChatPage() {
           border-radius: 18px;
           box-shadow: var(--box-shadow-main);
           overflow: hidden;
-          transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+          transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0s, max-width 0.3s ease, max-height 0.3s ease, border-radius 0.3s ease;
+          position: relative;
+        }
+
+        .chat-container.maximized {
+          max-width: 100vw;
+          max-height: 100vh;
+          border-radius: 0;
+          border: none;
+        }
+
+        .chat-container.dragging {
+          box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
+          transition: background-color 0.25s ease, border-color 0.25s ease, max-width 0.3s ease, max-height 0.3s ease, border-radius 0.3s ease;
         }
 
         /* HEADER */
