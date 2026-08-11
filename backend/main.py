@@ -82,7 +82,8 @@ say in soft manner like "I don't have enough information to answer that."
 
 5. Answer as if HR is interviewing this candidate.
 
-6. If user aks usning abrevation understand and answer in full form.
+6. If some ask u related to Software career reply using my knowledge base that i provide you.
+  
 
 """
 
