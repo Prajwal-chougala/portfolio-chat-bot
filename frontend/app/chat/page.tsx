@@ -52,9 +52,6 @@ export default function ChatPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Maximize state
-  const [isMaximized, setIsMaximized] = useState(false);
-  
   const abortControllerRef = useRef<AbortController | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -328,14 +325,13 @@ export default function ChatPage() {
     <div className={`chat-viewport ${theme === "dark" ? "theme-dark" : "theme-light"}`}>
       <Draggable
         handle=".chat-header"
-        disabled={isMaximized}
         bounds="parent"
       >
-        <div className={`chat-container ${isMaximized ? "maximized" : ""}`}>
+        <div className="chat-container">
           {/* Header */}
           <header 
             className="chat-header" 
-            style={{ cursor: isMaximized ? "default" : "grab" }}
+            style={{ cursor: "grab" }}
           >
             <div className="header-left">
             <div className="header-brand">
@@ -387,23 +383,6 @@ export default function ChatPage() {
               )}
             </button>
 
-            {/* Maximize Toggle Button */}
-            <button 
-              onClick={() => setIsMaximized(!isMaximized)} 
-              className="icon-btn maximize-btn" 
-              title={isMaximized ? "Restore" : "Maximize"} 
-              aria-label="Toggle maximize"
-            >
-              {isMaximized ? (
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
-                </svg>
-              ) : (
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-                </svg>
-              )}
-            </button>
 
             {/* Clear Button */}
             <button onClick={clearChat} className="icon-btn clear-button" title="Clear conversation" aria-label="Clear conversation">
@@ -581,23 +560,7 @@ export default function ChatPage() {
           position: relative;
         }
 
-        .chat-container.maximized {
-          position: fixed !important;
-          top: 0 !important;
-          left: 0 !important;
-          right: 0 !important;
-          bottom: 0 !important;
-          width: 100vw !important;
-          height: 100vh !important;
-          max-width: none !important;
-          max-height: none !important;
-          border-radius: 0;
-          border: none;
-          z-index: 9999;
-          transform: none !important;
-        }
-
-        .chat-container:active:not(.maximized) {
+        .chat-container:active {
           box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
         }
 
