@@ -15,7 +15,7 @@ if not my_api_key:
     raise ValueError("GROQ_API_KEY not found in environment variables")
 client = Groq(api_key=my_api_key)
 
-model = "llama-3.3-70b-versatile"  # "llama-3.3-70b-versatile"
+model = "groq/compound-mini"  # "llama-3.3-70b-versatile"
 
 app = FastAPI()
 
@@ -184,6 +184,19 @@ def read_pdf(file_path):
         text += page.extract_text()
     return text
 
+parsed_resume = None
+
+@app.on_event("startup")
+def startup_event():
+    global parsed_resume
+    try:
+        resume_text = read_pdf(Path("my_resume.pdf"))
+        parsed_resume = parse_resume(resume_text)
+        print("Resume parsed successfully at startup.")
+    except Exception as e:
+        print(f"Error parsing resume at startup: {e}")
+
+
 
 @app.get("/")
 def health_check():
@@ -191,9 +204,13 @@ def health_check():
 
 
 def generate_stream(user_message: str):
-    resume_text = read_pdf(Path("my_resume.pdf"))
-    resume = parse_resume(resume_text)
-    stream = ask_candidate(user_message, resume)
+    global parsed_resume
+    if parsed_resume is None:
+        # Fallback if startup failed
+        resume_text = read_pdf(Path("my_resume.pdf"))
+        parsed_resume = parse_resume(resume_text)
+        
+    stream = ask_candidate(user_message, parsed_resume)
     for chunk in stream:
         content = chunk.choices[0].delta.content
         if content:

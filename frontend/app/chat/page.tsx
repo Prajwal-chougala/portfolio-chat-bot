@@ -52,9 +52,14 @@ export default function ChatPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
   const abortControllerRef = useRef<AbortController | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const draggableNodeRef = useRef<HTMLDivElement>(null);
 
   // Set the welcome message timestamp on the client to avoid hydration mismatch
   useEffect(() => {
@@ -102,6 +107,7 @@ export default function ChatPage() {
       }
     };
     window.addEventListener("message", handleMessage);
+
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
@@ -115,12 +121,83 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isGenerating]);
 
-  async function handleSend(textToSend?: string) {
+  // Keep a fresh reference to handleSend for the speech recognition callback
+  const handleSendRef = useRef<any>(null);
+  useEffect(() => {
+    handleSendRef.current = handleSend;
+  });
+
+  function toggleListen() {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    } else {
+      // Stop any ongoing speech
+      window.speechSynthesis?.cancel();
+      setIsSpeaking(false);
+
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("Your browser does not support Speech Recognition.");
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = true; // Enable real-time feedback
+      recognition.lang = "en-US";
+
+      recognition.onresult = (event: any) => {
+        let interimTranscript = "";
+        let finalTranscript = "";
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
+
+        const currentTranscript = finalTranscript || interimTranscript;
+        if (currentTranscript) {
+          setInput(currentTranscript);
+        }
+
+        if (finalTranscript) {
+          recognition.stop();
+          setIsListening(false);
+          handleSendRef.current(finalTranscript, true);
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        if (event.error !== "no-speech") {
+          console.error("Speech recognition error", event.error);
+        }
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+      setIsListening(true);
+    }
+  }
+
+  async function handleSend(textToSend?: string, isVoice = false) {
     const query = (textToSend || input).trim();
     if (!query || isGenerating) return;
 
+    // Stop speaking if the user starts a new message
+    window.speechSynthesis?.cancel();
+    setIsSpeaking(false);
+
     const userMsg: Message = {
-      id: "usr-" + Date.now(),
+      id: "usr-" + Date.now() + "-" + Math.random().toString(36).substring(2, 9),
       role: "user",
       text: query,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
@@ -133,7 +210,7 @@ export default function ChatPage() {
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    const botMsgId = "bot-" + (Date.now() + 1);
+    const botMsgId = "bot-" + Date.now() + "-" + Math.random().toString(36).substring(2, 9);
     let fullReply = "";
 
     try {
@@ -193,6 +270,28 @@ export default function ChatPage() {
     } finally {
       setIsGenerating(false);
       abortControllerRef.current = null;
+
+      // If it was a voice request, read the response aloud
+      if (isVoice && window.speechSynthesis && fullReply) {
+        const cleanText = fullReply.replace(/[#*`_]/g, ""); // Remove markdown characters
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        
+        const voices = window.speechSynthesis.getVoices();
+        const femaleVoice = voices.find(voice => 
+          voice.name.toLowerCase().includes('female') || 
+          voice.name.toLowerCase().includes('samantha') || 
+          voice.name.toLowerCase().includes('zira') ||
+          voice.name.toLowerCase().includes('victoria')
+        );
+        if (femaleVoice) {
+          utterance.voice = femaleVoice;
+        }
+
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+        window.speechSynthesis.speak(utterance);
+      }
     }
   }
 
@@ -200,6 +299,8 @@ export default function ChatPage() {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
+    window.speechSynthesis?.cancel();
+    setIsSpeaking(false);
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -324,10 +425,11 @@ export default function ChatPage() {
   return (
     <div className={`chat-viewport ${theme === "dark" ? "theme-dark" : "theme-light"}`}>
       <Draggable
+        nodeRef={draggableNodeRef}
         handle=".chat-header"
         bounds="parent"
       >
-        <div className="chat-container">
+        <div ref={draggableNodeRef} className="chat-container">
           {/* Header */}
           <header 
             className="chat-header" 
@@ -492,6 +594,27 @@ export default function ChatPage() {
         {/* Input Bar */}
         <footer className="chat-footer">
           <div className="input-wrap">
+            <button 
+              onClick={toggleListen}
+              className={`action-button mic-button ${isListening ? 'listening' : ''}`}
+              title={isListening ? "Listening..." : "Click to speak"}
+              disabled={isGenerating}
+            >
+              {isListening ? (
+                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="pulse-icon">
+                   <rect x="9" y="2" width="6" height="10" rx="3" />
+                   <path d="M5 10v2a7 7 0 0 0 14 0v-2" />
+                   <line x1="12" y1="19" x2="12" y2="22" />
+                 </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                  <line x1="12" y1="19" x2="12" y2="22" />
+                </svg>
+              )}
+            </button>
+
             <input
               ref={inputRef}
               type="text"
@@ -502,6 +625,19 @@ export default function ChatPage() {
               disabled={isGenerating}
               className="user-input"
             />
+
+            {isSpeaking && !isGenerating && (
+              <button onClick={() => {
+                window.speechSynthesis?.cancel();
+                setIsSpeaking(false);
+              }} className="action-button stop-speech-button" title="Stop speaking">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                   <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                   <line x1="23" y1="9" x2="17" y2="15"></line>
+                   <line x1="17" y1="9" x2="23" y2="15"></line>
+                </svg>
+              </button>
+            )}
 
             {isGenerating ? (
               <button onClick={handleStop} className="action-button stop-button" title="Stop generating">
@@ -1084,6 +1220,49 @@ export default function ChatPage() {
           box-shadow: none;
           cursor: not-allowed;
           transform: none;
+        }
+
+        .mic-button {
+          width: 38px;
+          height: 38px;
+          border-radius: 8px;
+          background: var(--surface-card);
+          color: var(--text-secondary);
+          border: 1px solid var(--border-color);
+        }
+
+        .mic-button:hover:not(:disabled) {
+          color: var(--text-primary);
+          border-color: var(--border-hover);
+        }
+
+        .mic-button.listening {
+          background: rgba(239, 68, 68, 0.1);
+          color: #ef4444;
+          border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .pulse-icon {
+          animation: pulseIcon 1.5s infinite;
+        }
+
+        @keyframes pulseIcon {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.1); }
+          100% { transform: scale(1); }
+        }
+
+        .stop-speech-button {
+          width: 38px;
+          height: 38px;
+          border-radius: 8px;
+          background: rgba(239, 68, 68, 0.1);
+          color: #ef4444;
+          border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .stop-speech-button:hover {
+          background: rgba(239, 68, 68, 0.2);
         }
 
         .stop-button {
